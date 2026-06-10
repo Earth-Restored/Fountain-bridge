@@ -2,12 +2,18 @@ package micheal65536.fountain;
 
 import com.github.steveice10.mc.protocol.MinecraftProtocol;
 import com.github.steveice10.mc.protocol.codec.MinecraftCodec;
+import com.github.steveice10.mc.protocol.codec.MinecraftCodecHelper;
 import com.github.steveice10.mc.protocol.codec.MinecraftPacketSerializer;
 import com.github.steveice10.mc.protocol.codec.PacketCodec;
 import com.github.steveice10.mc.protocol.codec.PacketStateCodec;
 import com.github.steveice10.mc.protocol.data.ProtocolState;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundRemoveMobEffectPacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundUpdateMobEffectPacket;
+import com.github.steveice10.mc.auth.data.GameProfile;
+import com.github.steveice10.mc.protocol.data.game.PlayerListEntry;
+import com.github.steveice10.mc.protocol.data.game.PlayerListEntryAction;
+import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
+import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundPlayerInfoUpdatePacket;
 import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
 import com.github.steveice10.packetlib.codec.PacketDefinition;
 import com.github.steveice10.packetlib.packet.Packet;
@@ -23,14 +29,23 @@ import org.cloudburstmc.protocol.bedrock.packet.LoginPacket;
 import org.cloudburstmc.protocol.common.PacketSignal;
 import org.jetbrains.annotations.NotNull;
 
+import io.netty.buffer.ByteBuf;
+
 import micheal65536.fountain.connector.PlayerConnectorPluginWrapper;
 import micheal65536.fountain.connector.plugin.ConnectorPlugin;
 import micheal65536.fountain.connector.plugin.PlayerLoginInfo;
 import micheal65536.fountain.utils.LoginUtils;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -363,11 +378,72 @@ public class SessionsManager
 			clientbound.put(id, new PacketDefinition<>(id, ClientboundRemoveMobEffectCustomPacket.class, new MinecraftPacketSerializer<>(ClientboundRemoveMobEffectCustomPacket::read)));
 			clientboundIds.put(ClientboundRemoveMobEffectCustomPacket.class, id);
 
+			id = clientboundIds.get(ClientboundPlayerInfoUpdatePacket.class);
+			clientbound.put(id, new PacketDefinition<>(id, ClientboundPlayerInfoUpdatePacket.class, new MinecraftPacketSerializer<>(SessionsManager::readClientboundPlayerInfoUpdatePacket)));
+			clientboundIds.put(ClientboundPlayerInfoUpdatePacket.class, id);
+
 			return packetCodecBuilder.build();
 		}
 		catch (Exception exception)
 		{
 			throw new AssertionError(exception);
 		}
+	}
+
+	private static ClientboundPlayerInfoUpdatePacket readClientboundPlayerInfoUpdatePacket(ByteBuf in, MinecraftCodecHelper helper) throws IOException
+	{
+		EnumSet<PlayerListEntryAction> actions = helper.readEnumSet(in, PlayerListEntryAction.VALUES);
+		PlayerListEntry[] entries = new PlayerListEntry[helper.readVarInt(in)];
+
+		for (int index = 0; index < entries.length; index++)
+		{
+			PlayerListEntry entry = new PlayerListEntry(helper.readUUID(in));
+
+			for (PlayerListEntryAction action : actions)
+			{
+				switch (action)
+				{
+					case ADD_PLAYER ->
+					{
+						GameProfile profile = new GameProfile(entry.getProfileId(), helper.readString(in, 36));
+						int propertyCount = helper.readVarInt(in);
+						List<GameProfile.Property> properties = new ArrayList<>();
+						for (int propertyIndex = 0; propertyIndex < propertyCount; propertyIndex++)
+						{
+							properties.add(helper.readProperty(in));
+						}
+						profile.setProperties(properties);
+						entry.setProfile(profile);
+					}
+					case INITIALIZE_CHAT ->
+					{
+						if (in.readBoolean())
+						{
+							entry.setSessionId(helper.readUUID(in));
+							entry.setExpiresAt(in.readLong());
+							byte[] keySignature = helper.readByteArray(in);
+							try
+							{
+								KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+								entry.setPublicKey(keyFactory.generatePublic(new X509EncodedKeySpec(helper.readByteArray(in))));
+							}
+							catch (GeneralSecurityException exception)
+							{
+								throw new IOException("Could not decode public key.", exception);
+							}
+							entry.setKeySignature(keySignature);
+						}
+					}
+					case UPDATE_GAME_MODE -> entry.setGameMode(GameMode.byId(helper.readVarInt(in)));
+					case UPDATE_LISTED -> entry.setListed(in.readBoolean());
+					case UPDATE_LATENCY -> entry.setLatency(helper.readVarInt(in));
+					case UPDATE_DISPLAY_NAME -> entry.setDisplayName(helper.readNullable(in, helper::readComponent));
+				}
+			}
+
+			entries[index] = entry;
+		}
+
+		return new ClientboundPlayerInfoUpdatePacket(actions, entries);
 	}
 }
