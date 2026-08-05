@@ -53,6 +53,7 @@ import org.geysermc.mcprotocollib.network.Session;
 import org.geysermc.mcprotocollib.network.event.session.DisconnectedEvent;
 import org.geysermc.mcprotocollib.network.event.session.SessionAdapter;
 import org.geysermc.mcprotocollib.network.packet.Packet;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.cloudburstmc.math.vector.Vector2f;
@@ -80,7 +81,7 @@ public final class ServerPacketHandler extends SessionAdapter {
 			if (packet instanceof ClientboundLoginPacket) {
 				this.playerSession.onJavaLogin((ClientboundLoginPacket) packet);
 			} else if (packet instanceof ClientboundCustomPayloadPacket
-					&& ((ClientboundCustomPayloadPacket) packet).getChannel().equals("minecraft:register")) {
+					&& ((ClientboundCustomPayloadPacket) packet).getChannel().equals(Key.key("minecraft", "register"))) {
 				for (String channel : new String(((ClientboundCustomPayloadPacket) packet).getData(),
 						StandardCharsets.US_ASCII).split("\0")) {
 					this.playerSession.onJavaChannelRegister(channel);
@@ -90,7 +91,7 @@ public final class ServerPacketHandler extends SessionAdapter {
 					this.playerSession.loadJavaBiomes(registryPacket.getEntries());
 				}
 			} else if (packet instanceof ClientboundCustomPayloadPacket
-					&& ((ClientboundCustomPayloadPacket) packet).getChannel().equals("fabric:registry/sync/direct")) {
+					&& ((ClientboundCustomPayloadPacket) packet).getChannel().equals(Key.key("fabric", "registry/sync/direct"))) {
 				this.playerSession.handleFabricRegistrySyncData(((ClientboundCustomPayloadPacket) packet).getData());
 			} else if (packet instanceof ClientboundDisconnectPacket) {
 				// empty
@@ -146,15 +147,15 @@ public final class ServerPacketHandler extends SessionAdapter {
 			} else if (packet instanceof ClientboundContainerSetSlotPacket) {
 				this.playerSession.onJavaContainerSetSlot((ClientboundContainerSetSlotPacket) packet);
 			} else if (packet instanceof ClientboundCustomPayloadPacket && ((ClientboundCustomPayloadPacket) packet)
-					.getChannel().equals("fountain:inventory_sync_response")) {
+					.getChannel().equals(Key.key("fountain", "inventory_sync_response"))) {
 				this.playerSession.onJavaInventorySyncResponse(((ClientboundCustomPayloadPacket) packet).getData());
 			} else if (packet instanceof ClientboundCustomPayloadPacket
-					&& ((ClientboundCustomPayloadPacket) packet).getChannel().equals("fountain:set_hotbar_response")) {
+					&& ((ClientboundCustomPayloadPacket) packet).getChannel().equals(Key.key("fountain", "set_hotbar_response"))) {
 				this.playerSession.onJavaSetHotbarResponse(((ClientboundCustomPayloadPacket) packet).getData());
 			} else if (packet instanceof ClientboundSetCarriedItemPacket) {
 				this.playerSession.onJavaSetCarriedItem(((ClientboundSetCarriedItemPacket) packet).getSlot());
 			} else if (packet instanceof ClientboundCustomPayloadPacket
-					&& ((ClientboundCustomPayloadPacket) packet).getChannel().equals("fountain:item_particle")) {
+					&& ((ClientboundCustomPayloadPacket) packet).getChannel().equals(Key.key("fountain", "item_particle"))) {
 				this.playerSession.onJavaItemPickupParticle(((ClientboundCustomPayloadPacket) packet).getData());
 			}
 
