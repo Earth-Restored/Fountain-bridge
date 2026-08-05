@@ -340,6 +340,7 @@ public class InventoryManager
 	{
 		ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer();
 		byteBuf.writeBoolean(false);
+		this.minecraftCodecHelper.writeVarInt(byteBuf, hotbar.length);
 		for (GenoaInventoryHelper.Item item : hotbar)
 		{
 			try
@@ -364,6 +365,7 @@ public class InventoryManager
 	{
 		ByteBuf byteBuf = ByteBufAllocator.DEFAULT.buffer();
 		byteBuf.writeBoolean(true);
+		this.minecraftCodecHelper.writeVarInt(byteBuf, hotbar.length);
 		for (GenoaInventoryHelper.Item item : hotbar)
 		{
 			try

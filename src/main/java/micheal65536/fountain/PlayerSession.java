@@ -844,7 +844,7 @@ public final class PlayerSession {
 			ByteBuf buf = Unpooled.wrappedBuffer(data);
 			MinecraftCodecHelper minecraftCodecHelper = (MinecraftCodecHelper) this.java.getCodecHelper();
 
-			int count = buf.readInt();
+			int count = minecraftCodecHelper.readVarInt(buf);
 			ItemStack[] itemStacks = new ItemStack[count];
 			for (int index = 0; index < count; index++) {
 				ItemStack itemStack = minecraftCodecHelper.readItemStack(buf);
@@ -855,8 +855,9 @@ public final class PlayerSession {
 				itemStacks[index] = itemStack;
 			}
 
-			ItemStack[] hotbar = new ItemStack[7];
-			for (int index = 0; index < 7; index++) {
+			int hotbarCount = minecraftCodecHelper.readVarInt(buf);
+			ItemStack[] hotbar = new ItemStack[hotbarCount];
+			for (int index = 0; index < hotbarCount; index++) {
 				ItemStack itemStack = minecraftCodecHelper.readItemStack(buf);
 				hotbar[index] = itemStack;
 			}
