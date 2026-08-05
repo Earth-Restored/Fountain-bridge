@@ -1,7 +1,7 @@
 package micheal65536.fountain.utils;
 
-import com.github.steveice10.mc.protocol.codec.MinecraftCodecHelper;
-import com.github.steveice10.mc.protocol.packet.common.serverbound.ServerboundCustomPayloadPacket;
+import org.geysermc.mcprotocollib.protocol.codec.MinecraftCodecHelper;
+import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundCustomPayloadPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.apache.logging.log4j.LogManager;
@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import micheal65536.fountain.PlayerSession;
 import micheal65536.fountain.registry.JavaBlocks;
+import net.kyori.adventure.key.Key;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -38,7 +39,7 @@ public class FabricRegistryManager
 	public void enableRegistrySyncChannel()
 	{
 		LogManager.getLogger().debug("Enabling Fabric registry sync");
-		this.playerSession.sendJavaPacket(new ServerboundCustomPayloadPacket("minecraft:register", "fabric:registry/sync/direct".getBytes(StandardCharsets.US_ASCII)));
+		this.playerSession.sendJavaPacket(new ServerboundCustomPayloadPacket(Key.key("minecraft", "register"), "fabric:registry/sync/direct".getBytes(StandardCharsets.US_ASCII)));
 	}
 
 	public boolean handleRegistrySyncData(byte[] data)
@@ -134,7 +135,7 @@ public class FabricRegistryManager
 			}
 
 			LogManager.getLogger().debug("Finished Fabric registry sync");
-			this.playerSession.sendJavaPacket(new ServerboundCustomPayloadPacket("fabric:registry/sync/complete", new byte[0]));
+			this.playerSession.sendJavaPacket(new ServerboundCustomPayloadPacket(Key.key("fabric", "registry/sync/complete"), new byte[0]));
 
 			return true;
 		}

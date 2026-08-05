@@ -1,24 +1,24 @@
 package micheal65536.fountain;
 
-import com.github.steveice10.mc.protocol.MinecraftProtocol;
-import com.github.steveice10.mc.protocol.codec.MinecraftCodec;
-import com.github.steveice10.mc.protocol.codec.MinecraftCodecHelper;
-import com.github.steveice10.mc.protocol.codec.MinecraftPacketSerializer;
-import com.github.steveice10.mc.protocol.codec.PacketCodec;
-import com.github.steveice10.mc.protocol.codec.PacketStateCodec;
-import com.github.steveice10.mc.protocol.data.ProtocolState;
-import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundRemoveMobEffectPacket;
-import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.ClientboundUpdateMobEffectPacket;
+import org.geysermc.mcprotocollib.protocol.MinecraftProtocol;
+import org.geysermc.mcprotocollib.protocol.codec.MinecraftCodec;
+import org.geysermc.mcprotocollib.protocol.codec.MinecraftCodecHelper;
+import org.geysermc.mcprotocollib.protocol.codec.MinecraftPacketSerializer;
+import org.geysermc.mcprotocollib.protocol.codec.PacketCodec;
+import org.geysermc.mcprotocollib.protocol.codec.PacketStateCodec;
+import org.geysermc.mcprotocollib.protocol.data.ProtocolState;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundRemoveMobEffectPacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.ClientboundUpdateMobEffectPacket;
 import com.github.steveice10.mc.auth.data.GameProfile;
-import com.github.steveice10.mc.protocol.data.game.PlayerListEntry;
-import com.github.steveice10.mc.protocol.data.game.PlayerListEntryAction;
-import com.github.steveice10.mc.protocol.data.game.entity.player.GameMode;
-import com.github.steveice10.mc.protocol.packet.ingame.clientbound.ClientboundPlayerInfoUpdatePacket;
-import com.github.steveice10.mc.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
-import com.github.steveice10.packetlib.codec.PacketDefinition;
-import com.github.steveice10.packetlib.packet.Packet;
-import com.github.steveice10.packetlib.packet.PacketProtocol;
-import com.github.steveice10.packetlib.tcp.TcpClientSession;
+import org.geysermc.mcprotocollib.protocol.data.game.PlayerListEntry;
+import org.geysermc.mcprotocollib.protocol.data.game.PlayerListEntryAction;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.GameMode;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.ClientboundPlayerInfoUpdatePacket;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.clientbound.entity.spawn.ClientboundAddEntityPacket;
+import org.geysermc.mcprotocollib.network.codec.PacketDefinition;
+import org.geysermc.mcprotocollib.network.packet.Packet;
+import org.geysermc.mcprotocollib.network.packet.PacketProtocol;
+import org.geysermc.mcprotocollib.network.tcp.TcpClientSession;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.apache.logging.log4j.LogManager;
 import org.cloudburstmc.protocol.bedrock.BedrockServerSession;
@@ -37,6 +37,7 @@ import micheal65536.fountain.connector.plugin.PlayerLoginInfo;
 import micheal65536.fountain.utils.LoginUtils;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -49,8 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class SessionsManager
-{
+public class SessionsManager {
 	private static final PacketCodec MINECRAFT_CODEC_WITH_CUSTOM_ENTITY_SUPPORT = createCustomCodec();
 
 	private final String serverAddress;
@@ -65,22 +65,20 @@ public class SessionsManager
 	private final HashSet<ActiveSession> activeSessions = new HashSet<>();
 	private final HashSet<ClosedSessionBedrockPacketHandler> closedSessions = new HashSet<>();
 
-	public SessionsManager(@NotNull String serverAddress, int serverPort, @NotNull ConnectorPlugin connectorPlugin, boolean useUUIDAsUsername)
-	{
+	public SessionsManager(@NotNull String serverAddress, int serverPort, @NotNull ConnectorPlugin connectorPlugin,
+			boolean useUUIDAsUsername) {
 		this.serverAddress = serverAddress;
 		this.serverPort = serverPort;
 		this.connectorPlugin = connectorPlugin;
 		this.useUUIDAsUsername = useUUIDAsUsername;
 	}
 
-	public void newClientConnection(@NotNull BedrockServerSession bedrockServerSession)
-	{
+	public void newClientConnection(@NotNull BedrockServerSession bedrockServerSession) {
 		this.lock.lock();
 
 		LogManager.getLogger().info("New connection from {}", bedrockServerSession.getPeer().getSocketAddress());
 
-		if (!this.acceptNewConnection)
-		{
+		if (!this.acceptNewConnection) {
 			LogManager.getLogger().info("Rejecting connection as we are shutting down");
 			this.lock.unlock();
 			return;
@@ -97,39 +95,36 @@ public class SessionsManager
 		this.lock.unlock();
 	}
 
-	private void handleLogin(@NotNull LoginBedrockPacketHandler loginBedrockPacketHandler, @NotNull LoginPacket loginPacket)
-	{
+	private void handleLogin(@NotNull LoginBedrockPacketHandler loginBedrockPacketHandler,
+			@NotNull LoginPacket loginPacket) {
 		this.lock.lock();
 
 		LoginUtils.LoginInfo loginInfo = LoginUtils.getLoginInfo(loginPacket);
-		if (loginInfo == null)
-		{
+		if (loginInfo == null) {
 			LogManager.getLogger().warn("Could not get login info from login packet");
 			this.disconnectPending(loginBedrockPacketHandler);
 			this.lock.unlock();
 			return;
 		}
-		if (this.activeSessions.stream().anyMatch(activeSession -> activeSession.uuid.equals(loginInfo.uuid)))
-		{
-			LogManager.getLogger().warn("Multiple player logins with the same UUID {} {}", loginInfo.username, loginInfo.uuid);
+		if (this.activeSessions.stream().anyMatch(activeSession -> activeSession.uuid.equals(loginInfo.uuid))) {
+			LogManager.getLogger().warn("Multiple player logins with the same UUID {} {}", loginInfo.username,
+					loginInfo.uuid);
 			this.disconnectPending(loginBedrockPacketHandler);
 			this.lock.unlock();
 			return;
 		}
-		try
-		{
+		try {
 			boolean accepted = this.connectorPlugin.onPlayerConnected(new PlayerLoginInfo(loginInfo.uuid));
-			if (!accepted)
-			{
-				LogManager.getLogger().warn("Connector plugin rejected player login for {} {}", loginInfo.username, loginInfo.uuid);
+			if (!accepted) {
+				LogManager.getLogger().warn("Connector plugin rejected player login for {} {}", loginInfo.username,
+						loginInfo.uuid);
 				this.disconnectPending(loginBedrockPacketHandler);
 				this.lock.unlock();
 				return;
 			}
-		}
-		catch (ConnectorPlugin.ConnectorPluginException exception)
-		{
-			LogManager.getLogger().warn("Connector plugin threw exception when handling player login for {} {}", loginInfo.username, loginInfo.uuid, exception);
+		} catch (ConnectorPlugin.ConnectorPluginException exception) {
+			LogManager.getLogger().warn("Connector plugin threw exception when handling player login for {} {}",
+					loginInfo.username, loginInfo.uuid, exception);
 			this.disconnectPending(loginBedrockPacketHandler);
 			this.lock.unlock();
 			return;
@@ -137,11 +132,15 @@ public class SessionsManager
 		this.pendingSessions.remove(loginBedrockPacketHandler);
 		LogManager.getLogger().info("Player logged in {} {}", loginInfo.username, loginInfo.uuid);
 
-		MinecraftProtocol javaProtocol = new MinecraftProtocol(MINECRAFT_CODEC_WITH_CUSTOM_ENTITY_SUPPORT, this.useUUIDAsUsername ? loginInfo.uuid : loginInfo.username);
+		MinecraftProtocol javaProtocol = new MinecraftProtocol(MINECRAFT_CODEC_WITH_CUSTOM_ENTITY_SUPPORT,
+				this.useUUIDAsUsername ? loginInfo.uuid : loginInfo.username);
 		TcpClientSession tcpClientSession = new TcpClientSession(this.serverAddress, this.serverPort, javaProtocol);
 
-		PlayerSession playerSession = new PlayerSession(loginBedrockPacketHandler.bedrockServerSession, tcpClientSession, new PlayerConnectorPluginWrapper(this.connectorPlugin, loginInfo.uuid), this::onSessionClosed);
-		this.activeSessions.add(new ActiveSession(loginInfo.uuid, playerSession, loginBedrockPacketHandler.bedrockServerSession));
+		PlayerSession playerSession = new PlayerSession(loginBedrockPacketHandler.bedrockServerSession,
+				tcpClientSession, new PlayerConnectorPluginWrapper(this.connectorPlugin, loginInfo.uuid),
+				this::onSessionClosed);
+		this.activeSessions
+				.add(new ActiveSession(loginInfo.uuid, playerSession, loginBedrockPacketHandler.bedrockServerSession));
 
 		playerSession.mutex.lock();
 		loginBedrockPacketHandler.bedrockServerSession.setPacketHandler(new ClientPacketHandler(playerSession));
@@ -152,15 +151,15 @@ public class SessionsManager
 		this.lock.unlock();
 	}
 
-	private void onSessionClosed(PlayerSession playerSession)
-	{
+	private void onSessionClosed(PlayerSession playerSession) {
 		this.lock.lock();
-		ActiveSession activeSession = this.activeSessions.stream().filter(activeSession1 -> activeSession1.playerSession == playerSession).findAny().orElse(null);
-		if (activeSession != null)
-		{
+		ActiveSession activeSession = this.activeSessions.stream()
+				.filter(activeSession1 -> activeSession1.playerSession == playerSession).findAny().orElse(null);
+		if (activeSession != null) {
 			this.activeSessions.remove(activeSession);
 
-			ClosedSessionBedrockPacketHandler closedSessionBedrockPacketHandler = new ClosedSessionBedrockPacketHandler(activeSession.bedrockServerSession);
+			ClosedSessionBedrockPacketHandler closedSessionBedrockPacketHandler = new ClosedSessionBedrockPacketHandler(
+					activeSession.bedrockServerSession);
 			this.closedSessions.add(closedSessionBedrockPacketHandler);
 			activeSession.bedrockServerSession.setPacketHandler(closedSessionBedrockPacketHandler);
 
@@ -169,44 +168,33 @@ public class SessionsManager
 		this.lock.unlock();
 	}
 
-	private void disconnectPending(@NotNull LoginBedrockPacketHandler loginBedrockPacketHandler)
-	{
+	private void disconnectPending(@NotNull LoginBedrockPacketHandler loginBedrockPacketHandler) {
 		this.lock.lock();
-		if (this.pendingSessions.remove(loginBedrockPacketHandler))
-		{
+		if (this.pendingSessions.remove(loginBedrockPacketHandler)) {
 			LogManager.getLogger().info("Pending session has disconnected");
-			try
-			{
+			try {
 				loginBedrockPacketHandler.bedrockServerSession.disconnect();
-			}
-			catch (IllegalStateException exception)
-			{
+			} catch (IllegalStateException exception) {
 				// empty
 			}
 		}
 		this.lock.unlock();
 	}
 
-	private void disconnectClosed(@NotNull ClosedSessionBedrockPacketHandler closedSessionBedrockPacketHandler)
-	{
+	private void disconnectClosed(@NotNull ClosedSessionBedrockPacketHandler closedSessionBedrockPacketHandler) {
 		this.lock.lock();
-		if (this.closedSessions.remove(closedSessionBedrockPacketHandler))
-		{
+		if (this.closedSessions.remove(closedSessionBedrockPacketHandler)) {
 			LogManager.getLogger().info("Closed session has finished disconnecting");
-			try
-			{
+			try {
 				closedSessionBedrockPacketHandler.bedrockServerSession.disconnect();
-			}
-			catch (IllegalStateException exception)
-			{
+			} catch (IllegalStateException exception) {
 				// empty
 			}
 		}
 		this.lock.unlock();
 	}
 
-	public void shutdown()
-	{
+	public void shutdown() {
 		this.lock.lock();
 
 		LogManager.getLogger().info("Shutting down");
@@ -219,57 +207,49 @@ public class SessionsManager
 		this.lock.unlock();
 
 		LogManager.getLogger().info("Disconnecting {} remaining pending sessions", pendingSessions.length);
-		for (LoginBedrockPacketHandler loginBedrockPacketHandler : pendingSessions)
-		{
+		for (LoginBedrockPacketHandler loginBedrockPacketHandler : pendingSessions) {
 			loginBedrockPacketHandler.bedrockServerSession.disconnect("", true);
 		}
 
 		LogManager.getLogger().info("Disconnecting {} remaining active sessions", activeSessions.length);
-		for (ActiveSession activeSession : activeSessions)
-		{
+		for (ActiveSession activeSession : activeSessions) {
 			activeSession.playerSession.mutex.lock();
 			activeSession.playerSession.disconnect(true);
 			activeSession.playerSession.mutex.unlock();
 		}
 
 		this.lock.lock();
-		if (!this.closedSessions.isEmpty())
-		{
-			LogManager.getLogger().info("Waiting 20 seconds for {} remaining closed sessions to disconnect", this.closedSessions.size());
+		if (!this.closedSessions.isEmpty()) {
+			LogManager.getLogger().info("Waiting 20 seconds for {} remaining closed sessions to disconnect",
+					this.closedSessions.size());
 			long waitStartTime = System.nanoTime();
-			while (!this.closedSessions.isEmpty() && System.nanoTime() < waitStartTime + 20 * 1000000000l)
-			{
+			while (!this.closedSessions.isEmpty() && System.nanoTime() < waitStartTime + 20 * 1000000000l) {
 				this.lock.unlock();
 
-				try
-				{
+				try {
 					Thread.sleep(1000);
-				}
-				catch (InterruptedException exception)
-				{
+				} catch (InterruptedException exception) {
 					// empty
 				}
 
 				this.lock.lock();
 			}
 
-			ClosedSessionBedrockPacketHandler[] closedSessions = this.closedSessions.toArray(new ClosedSessionBedrockPacketHandler[0]);
+			ClosedSessionBedrockPacketHandler[] closedSessions = this.closedSessions
+					.toArray(new ClosedSessionBedrockPacketHandler[0]);
 			this.closedSessions.clear();
 			this.lock.unlock();
 
-			if (closedSessions.length > 0)
-			{
-				LogManager.getLogger().info("Forcibly disconnecting {} remaining closed sessions", closedSessions.length);
-				for (ClosedSessionBedrockPacketHandler closedSessionBedrockPacketHandler : closedSessions)
-				{
+			if (closedSessions.length > 0) {
+				LogManager.getLogger().info("Forcibly disconnecting {} remaining closed sessions",
+						closedSessions.length);
+				for (ClosedSessionBedrockPacketHandler closedSessionBedrockPacketHandler : closedSessions) {
 					closedSessionBedrockPacketHandler.bedrockServerSession.disconnect("", true);
 				}
 			}
 
 			this.lock.lock();
-		}
-		else
-		{
+		} else {
 			LogManager.getLogger().info("No remaining closed sessions to disconnect");
 		}
 
@@ -278,38 +258,30 @@ public class SessionsManager
 		this.lock.unlock();
 	}
 
-	private class ActiveSession
-	{
+	private class ActiveSession {
 		private final String uuid;
 		private final PlayerSession playerSession;
 		private final BedrockServerSession bedrockServerSession;
 
-		public ActiveSession(String uuid, PlayerSession playerSession, BedrockServerSession bedrockServerSession)
-		{
+		public ActiveSession(String uuid, PlayerSession playerSession, BedrockServerSession bedrockServerSession) {
 			this.uuid = uuid;
 			this.playerSession = playerSession;
 			this.bedrockServerSession = bedrockServerSession;
 		}
 	}
 
-	private class LoginBedrockPacketHandler implements BedrockPacketHandler
-	{
+	private class LoginBedrockPacketHandler implements BedrockPacketHandler {
 		private final BedrockServerSession bedrockServerSession;
 
-		public LoginBedrockPacketHandler(BedrockServerSession bedrockServerSession)
-		{
+		public LoginBedrockPacketHandler(BedrockServerSession bedrockServerSession) {
 			this.bedrockServerSession = bedrockServerSession;
 		}
 
 		@Override
-		public PacketSignal handlePacket(BedrockPacket packet)
-		{
-			if (packet instanceof LoginPacket)
-			{
+		public PacketSignal handlePacket(BedrockPacket packet) {
+			if (packet instanceof LoginPacket) {
 				SessionsManager.this.handleLogin(this, (LoginPacket) packet);
-			}
-			else
-			{
+			} else {
 				LogManager.getLogger().warn("Received non-login packet during login phase");
 				SessionsManager.this.disconnectPending(this);
 			}
@@ -317,118 +289,118 @@ public class SessionsManager
 		}
 
 		@Override
-		public void onDisconnect(String reason)
-		{
+		public void onDisconnect(String reason) {
 			LogManager.getLogger().info("Client disconnected during login phase: {}", reason);
 			SessionsManager.this.disconnectPending(this);
 		}
 	}
 
-	private class ClosedSessionBedrockPacketHandler implements BedrockPacketHandler
-	{
+	private class ClosedSessionBedrockPacketHandler implements BedrockPacketHandler {
 		private final BedrockServerSession bedrockServerSession;
 
-		public ClosedSessionBedrockPacketHandler(BedrockServerSession bedrockServerSession)
-		{
+		public ClosedSessionBedrockPacketHandler(BedrockServerSession bedrockServerSession) {
 			this.bedrockServerSession = bedrockServerSession;
 		}
 
 		@Override
-		public PacketSignal handlePacket(BedrockPacket packet)
-		{
+		public PacketSignal handlePacket(BedrockPacket packet) {
 			LogManager.getLogger().warn("Received packet after close: {}", packet.getClass().getSimpleName());
 			return PacketSignal.HANDLED;
 		}
 
 		@Override
-		public void onDisconnect(String reason)
-		{
+		public void onDisconnect(String reason) {
 			LogManager.getLogger().info("Client has finished disconnecting: {}", reason);
 			SessionsManager.this.disconnectClosed(this);
 		}
 	}
 
-	private static PacketCodec createCustomCodec()
-	{
-		try
-		{
+	@SuppressWarnings("unchecked")
+	private static PacketCodec createCustomCodec() {
+		try {
 			PacketCodec.Builder packetCodecBuilder = MinecraftCodec.CODEC.toBuilder();
 
-			// this ugly mess is to allow replacing existing packets with our custom subclasses that allow for non-vanilla IDs/content
+			// this ugly mess is to allow replacing existing packets with our custom
+			// subclasses that allow for non-vanilla IDs/content
 			Field stateProtocolsField = PacketCodec.Builder.class.getDeclaredField("stateProtocols");
 			stateProtocolsField.setAccessible(true);
-			EnumMap<ProtocolState, PacketStateCodec> stateProtocols = (EnumMap<ProtocolState, PacketStateCodec>) stateProtocolsField.get(packetCodecBuilder);
+			EnumMap<ProtocolState, PacketStateCodec> stateProtocols = (EnumMap<ProtocolState, PacketStateCodec>) stateProtocolsField
+					.get(packetCodecBuilder);
 			PacketStateCodec packetStateCodec = stateProtocols.get(ProtocolState.GAME);
 			Field clientboundField = PacketProtocol.class.getDeclaredField("clientbound");
 			Field clientboundIdsField = PacketProtocol.class.getDeclaredField("clientboundIds");
 			clientboundField.setAccessible(true);
 			clientboundIdsField.setAccessible(true);
-			Int2ObjectMap<PacketDefinition<? extends Packet, ?>> clientbound = (Int2ObjectMap<PacketDefinition<? extends Packet, ?>>) clientboundField.get(packetStateCodec);
-			Map<Class<? extends Packet>, Integer> clientboundIds = (Map<Class<? extends Packet>, Integer>) clientboundIdsField.get(packetStateCodec);
+			Int2ObjectMap<PacketDefinition<? extends Packet, ?>> clientbound = (Int2ObjectMap<PacketDefinition<? extends Packet, ?>>) clientboundField
+					.get(packetStateCodec);
+			Map<Class<? extends Packet>, Integer> clientboundIds = (Map<Class<? extends Packet>, Integer>) clientboundIdsField
+					.get(packetStateCodec);
 
 			int id = clientboundIds.get(ClientboundAddEntityPacket.class);
-			clientbound.put(id, new PacketDefinition<>(id, ClientboundAddEntityCustomPacket.class, new MinecraftPacketSerializer<>(ClientboundAddEntityCustomPacket::read)));
+			clientbound.put(id, new PacketDefinition<>(id, ClientboundAddEntityCustomPacket.class,
+					new MinecraftPacketSerializer<>(ClientboundAddEntityCustomPacket::readUnchecked)));
 			clientboundIds.put(ClientboundAddEntityCustomPacket.class, id);
 
 			id = clientboundIds.get(ClientboundUpdateMobEffectPacket.class);
-			clientbound.put(id, new PacketDefinition<>(id, ClientboundUpdateMobEffectCustomPacket.class, new MinecraftPacketSerializer<>(ClientboundUpdateMobEffectCustomPacket::read)));
+			clientbound.put(id, new PacketDefinition<>(id, ClientboundUpdateMobEffectCustomPacket.class,
+					new MinecraftPacketSerializer<>(ClientboundUpdateMobEffectCustomPacket::readUnchecked)));
 			clientboundIds.put(ClientboundUpdateMobEffectCustomPacket.class, id);
 
 			id = clientboundIds.get(ClientboundRemoveMobEffectPacket.class);
-			clientbound.put(id, new PacketDefinition<>(id, ClientboundRemoveMobEffectCustomPacket.class, new MinecraftPacketSerializer<>(ClientboundRemoveMobEffectCustomPacket::read)));
+			clientbound.put(id, new PacketDefinition<>(id, ClientboundRemoveMobEffectCustomPacket.class,
+					new MinecraftPacketSerializer<>(ClientboundRemoveMobEffectCustomPacket::readUnchecked)));
 			clientboundIds.put(ClientboundRemoveMobEffectCustomPacket.class, id);
 
 			id = clientboundIds.get(ClientboundPlayerInfoUpdatePacket.class);
-			clientbound.put(id, new PacketDefinition<>(id, ClientboundPlayerInfoUpdatePacket.class, new MinecraftPacketSerializer<>(SessionsManager::readClientboundPlayerInfoUpdatePacket)));
+			clientbound.put(id, new PacketDefinition<>(id, ClientboundPlayerInfoUpdatePacket.class,
+					new MinecraftPacketSerializer<>(SessionsManager::readClientboundPlayerInfoUpdatePacketUnchecked)));
 			clientboundIds.put(ClientboundPlayerInfoUpdatePacket.class, id);
 
 			return packetCodecBuilder.build();
-		}
-		catch (Exception exception)
-		{
+		} catch (Exception exception) {
 			throw new AssertionError(exception);
 		}
 	}
 
-	private static ClientboundPlayerInfoUpdatePacket readClientboundPlayerInfoUpdatePacket(ByteBuf in, MinecraftCodecHelper helper) throws IOException
-	{
+	private static ClientboundPlayerInfoUpdatePacket readClientboundPlayerInfoUpdatePacketUnchecked(ByteBuf in,
+			MinecraftCodecHelper helper) {
+		try {
+			return readClientboundPlayerInfoUpdatePacket(in, helper);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
+	}
+
+	private static ClientboundPlayerInfoUpdatePacket readClientboundPlayerInfoUpdatePacket(ByteBuf in,
+			MinecraftCodecHelper helper) throws IOException {
 		EnumSet<PlayerListEntryAction> actions = helper.readEnumSet(in, PlayerListEntryAction.VALUES);
 		PlayerListEntry[] entries = new PlayerListEntry[helper.readVarInt(in)];
 
-		for (int index = 0; index < entries.length; index++)
-		{
+		for (int index = 0; index < entries.length; index++) {
 			PlayerListEntry entry = new PlayerListEntry(helper.readUUID(in));
 
-			for (PlayerListEntryAction action : actions)
-			{
-				switch (action)
-				{
-					case ADD_PLAYER ->
-					{
+			for (PlayerListEntryAction action : actions) {
+				switch (action) {
+					case ADD_PLAYER -> {
 						GameProfile profile = new GameProfile(entry.getProfileId(), helper.readString(in, 36));
 						int propertyCount = helper.readVarInt(in);
 						List<GameProfile.Property> properties = new ArrayList<>();
-						for (int propertyIndex = 0; propertyIndex < propertyCount; propertyIndex++)
-						{
+						for (int propertyIndex = 0; propertyIndex < propertyCount; propertyIndex++) {
 							properties.add(helper.readProperty(in));
 						}
 						profile.setProperties(properties);
 						entry.setProfile(profile);
 					}
-					case INITIALIZE_CHAT ->
-					{
-						if (in.readBoolean())
-						{
+					case INITIALIZE_CHAT -> {
+						if (in.readBoolean()) {
 							entry.setSessionId(helper.readUUID(in));
 							entry.setExpiresAt(in.readLong());
 							byte[] keySignature = helper.readByteArray(in);
-							try
-							{
+							try {
 								KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-								entry.setPublicKey(keyFactory.generatePublic(new X509EncodedKeySpec(helper.readByteArray(in))));
-							}
-							catch (GeneralSecurityException exception)
-							{
+								entry.setPublicKey(
+										keyFactory.generatePublic(new X509EncodedKeySpec(helper.readByteArray(in))));
+							} catch (GeneralSecurityException exception) {
 								throw new IOException("Could not decode public key.", exception);
 							}
 							entry.setKeySignature(keySignature);

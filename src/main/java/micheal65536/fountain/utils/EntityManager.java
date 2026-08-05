@@ -1,17 +1,5 @@
 package micheal65536.fountain.utils;
 
-import com.github.steveice10.mc.protocol.codec.MinecraftPacket;
-import com.github.steveice10.mc.protocol.data.game.entity.EntityEvent;
-import com.github.steveice10.mc.protocol.data.game.entity.attribute.Attribute;
-import com.github.steveice10.mc.protocol.data.game.entity.attribute.AttributeModifier;
-import com.github.steveice10.mc.protocol.data.game.entity.attribute.AttributeType;
-import com.github.steveice10.mc.protocol.data.game.entity.attribute.ModifierOperation;
-import com.github.steveice10.mc.protocol.data.game.entity.metadata.EntityMetadata;
-import com.github.steveice10.mc.protocol.data.game.entity.metadata.MetadataType;
-import com.github.steveice10.mc.protocol.data.game.entity.player.Animation;
-import com.github.steveice10.mc.protocol.data.game.entity.player.Hand;
-import com.github.steveice10.mc.protocol.data.game.entity.player.InteractAction;
-import com.github.steveice10.mc.protocol.packet.ingame.serverbound.player.ServerboundInteractPacket;
 import org.apache.logging.log4j.LogManager;
 import org.cloudburstmc.math.vector.Vector2f;
 import org.cloudburstmc.math.vector.Vector3f;
@@ -33,6 +21,18 @@ import org.cloudburstmc.protocol.bedrock.packet.RemoveEntityPacket;
 import org.cloudburstmc.protocol.bedrock.packet.SetEntityDataPacket;
 import org.cloudburstmc.protocol.bedrock.packet.SetEntityMotionPacket;
 import org.cloudburstmc.protocol.bedrock.packet.UpdateAttributesPacket;
+import org.geysermc.mcprotocollib.protocol.codec.MinecraftPacket;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.EntityEvent;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.attribute.Attribute;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.attribute.AttributeModifier;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.attribute.AttributeType;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.attribute.ModifierOperation;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.EntityMetadata;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.MetadataType;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Animation;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.Hand;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.player.InteractAction;
+import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.ServerboundInteractPacket;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -47,27 +47,22 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
-public class EntityManager
-{
+public class EntityManager {
 	private final PlayerSession playerSession;
 
 	private final HashMap<Integer, JavaEntityInstance> javaEntities = new HashMap<>();
 	private final HashMap<Long, BedrockEntityInstance> bedrockEntities = new HashMap<>();
 
-	public EntityManager(@NotNull PlayerSession playerSession)
-	{
+	public EntityManager(@NotNull PlayerSession playerSession) {
 		this.playerSession = playerSession;
 	}
 
-	public void registerJavaEntity(int instanceId, @NotNull JavaEntityInstance entityInstance)
-	{
-		if (this.javaEntities.containsKey(instanceId))
-		{
+	public void registerJavaEntity(int instanceId, @NotNull JavaEntityInstance entityInstance) {
+		if (this.javaEntities.containsKey(instanceId)) {
 			LogManager.getLogger().warn("Duplicate Java entity instance ID {}", instanceId);
 			return;
 		}
-		if (entityInstance.entityManager != null)
-		{
+		if (entityInstance.entityManager != null) {
 			throw new IllegalArgumentException("Java entity instance has already been added");
 		}
 
@@ -78,14 +73,14 @@ public class EntityManager
 	}
 
 	@NotNull
-	public LocalPlayerJavaEntityInstance registerLocalPlayerEntity(int javaEntityInstanceId, @NotNull LocalPlayerJavaEntityInstance.PlayerDeadCallback playerDeadCallback)
-	{
-		if (this.javaEntities.containsKey(javaEntityInstanceId))
-		{
+	public LocalPlayerJavaEntityInstance registerLocalPlayerEntity(int javaEntityInstanceId,
+			@NotNull LocalPlayerJavaEntityInstance.PlayerDeadCallback playerDeadCallback) {
+		if (this.javaEntities.containsKey(javaEntityInstanceId)) {
 			LogManager.getLogger().warn("Duplicate Java entity instance ID {}", javaEntityInstanceId);
 		}
 
-		LocalPlayerJavaEntityInstance localPlayerJavaEntityInstance = new LocalPlayerJavaEntityInstance(playerDeadCallback);
+		LocalPlayerJavaEntityInstance localPlayerJavaEntityInstance = new LocalPlayerJavaEntityInstance(
+				playerDeadCallback);
 		((JavaEntityInstance) localPlayerJavaEntityInstance).entityManager = this;
 		((JavaEntityInstance) localPlayerJavaEntityInstance).instanceId = javaEntityInstanceId;
 		this.javaEntities.put(javaEntityInstanceId, localPlayerJavaEntityInstance);
@@ -98,10 +93,8 @@ public class EntityManager
 		return localPlayerJavaEntityInstance;
 	}
 
-	public void addBedrockEntity(@NotNull String identifier, @NotNull BedrockEntityInstance entityInstance)
-	{
-		if (entityInstance.entityManager != null)
-		{
+	public void addBedrockEntity(@NotNull String identifier, @NotNull BedrockEntityInstance entityInstance) {
+		if (entityInstance.entityManager != null) {
 			throw new IllegalArgumentException("Bedrock entity instance has already been added");
 		}
 
@@ -131,10 +124,8 @@ public class EntityManager
 		this.bedrockEntities.put(entityInstance.instanceId, entityInstance);
 	}
 
-	public void addBedrockItemEntity(@NotNull BedrockEntityInstance entityInstance, @NotNull ItemData item)
-	{
-		if (entityInstance.entityManager != null)
-		{
+	public void addBedrockItemEntity(@NotNull BedrockEntityInstance entityInstance, @NotNull ItemData item) {
+		if (entityInstance.entityManager != null) {
 			throw new IllegalArgumentException("Bedrock entity instance has already been added");
 		}
 
@@ -160,21 +151,17 @@ public class EntityManager
 	}
 
 	@Nullable
-	public JavaEntityInstance getJavaEntity(int instanceId)
-	{
+	public JavaEntityInstance getJavaEntity(int instanceId) {
 		return this.javaEntities.getOrDefault(instanceId, null);
 	}
 
 	@Nullable
-	public BedrockEntityInstance getBedrockEntity(long instanceId)
-	{
+	public BedrockEntityInstance getBedrockEntity(long instanceId) {
 		return this.bedrockEntities.getOrDefault(instanceId, null);
 	}
 
-	private void removeJavaEntity(@NotNull JavaEntityInstance entityInstance)
-	{
-		if (this.javaEntities.remove(entityInstance.instanceId) != entityInstance)
-		{
+	private void removeJavaEntity(@NotNull JavaEntityInstance entityInstance) {
+		if (this.javaEntities.remove(entityInstance.instanceId) != entityInstance) {
 			throw new AssertionError();
 		}
 
@@ -182,10 +169,8 @@ public class EntityManager
 		entityInstance.entityManager = null;
 	}
 
-	private void removeBedrockEntity(@NotNull BedrockEntityInstance entityInstance)
-	{
-		if (this.bedrockEntities.remove(entityInstance.instanceId) != entityInstance)
-		{
+	private void removeBedrockEntity(@NotNull BedrockEntityInstance entityInstance) {
+		if (this.bedrockEntities.remove(entityInstance.instanceId) != entityInstance) {
 			throw new AssertionError();
 		}
 
@@ -199,13 +184,11 @@ public class EntityManager
 
 	private int nextBedrockEntityId = 1;
 
-	private int getNewBedrockEntityId()
-	{
+	private int getNewBedrockEntityId() {
 		return this.nextBedrockEntityId++;
 	}
 
-	public static class JavaEntityInstance
-	{
+	public static class JavaEntityInstance {
 		private EntityManager entityManager = null;
 		private int instanceId;
 
@@ -227,27 +210,21 @@ public class EntityManager
 		private JavaEntityInstance mount = null;
 		private final HashMap<Integer, JavaEntityInstance> passengers = new HashMap<>();
 
-		public JavaEntityInstance()
-		{
+		public JavaEntityInstance() {
 			// empty
 		}
 
-		public final int getInstanceId()
-		{
+		public final int getInstanceId() {
 			this.requireEntityManager();
 			return this.instanceId;
 		}
 
-		public final void remove()
-		{
-			if (this.mount != null)
-			{
+		public final void remove() {
+			if (this.mount != null) {
 				this.mount.removePassenger(this);
 			}
-			if (!this.passengers.isEmpty())
-			{
-				for (JavaEntityInstance passenger : this.passengers.values().toArray(JavaEntityInstance[]::new))
-				{
+			if (!this.passengers.isEmpty()) {
+				for (JavaEntityInstance passenger : this.passengers.values().toArray(JavaEntityInstance[]::new)) {
 					this.removePassenger(passenger);
 				}
 			}
@@ -255,8 +232,7 @@ public class EntityManager
 			this.requireEntityManager().removeJavaEntity(this);
 		}
 
-		public final void setPosition(@NotNull Vector3f pos, boolean onGround, float yaw, float pitch)
-		{
+		public final void setPosition(@NotNull Vector3f pos, boolean onGround, float yaw, float pitch) {
 			this.pos = pos;
 			this.onGround = onGround;
 			this.yaw = yaw;
@@ -264,20 +240,19 @@ public class EntityManager
 			this.onPositionChanged();
 		}
 
-		public final void setVelocity(@NotNull Vector3f velocity)
-		{
+		public final void setVelocity(@NotNull Vector3f velocity) {
 			this.velocity = velocity;
 			this.onVelocityChanged();
 		}
 
-		public final void setHeadYaw(float headYaw)
-		{
+		public final void setHeadYaw(float headYaw) {
 			this.headYaw = headYaw;
 			this.onHeadYawChanged();
 		}
 
-		public final void setEquipment(@NotNull ItemData handMain, @NotNull ItemData handSecondary, @NotNull ItemData armorHead, @NotNull ItemData armorChest, @NotNull ItemData armorLegs, @NotNull ItemData armorFeet)
-		{
+		public final void setEquipment(@NotNull ItemData handMain, @NotNull ItemData handSecondary,
+				@NotNull ItemData armorHead, @NotNull ItemData armorChest, @NotNull ItemData armorLegs,
+				@NotNull ItemData armorFeet) {
 			this.handMain = handMain;
 			this.handSecondary = handSecondary;
 			this.armorHead = armorHead;
@@ -287,59 +262,46 @@ public class EntityManager
 			this.onEquipmentChanged();
 		}
 
-		public final void metadataChanged(@NotNull EntityMetadata<?, ?>[] metadata)
-		{
-			for (EntityMetadata<?, ? extends MetadataType<?>> entityMetadata : metadata)
-			{
+		public final void metadataChanged(@NotNull EntityMetadata<?, ?>[] metadata) {
+			for (EntityMetadata<?, ? extends MetadataType<?>> entityMetadata : metadata) {
 				this.onMetadataFieldChanged(entityMetadata);
 			}
 			this.afterMetadataBatchChange();
 		}
 
-		public final void attributesChanged(@NotNull Attribute[] attributes)
-		{
-			for (Attribute attribute : attributes)
-			{
+		public final void attributesChanged(@NotNull Attribute[] attributes) {
+			for (Attribute attribute : attributes) {
 				this.onAttributeChanged(attribute);
 			}
 			this.afterAttributeBatchChange();
 		}
 
-		public final void hurt()
-		{
+		public final void hurt() {
 			this.onHurt();
 		}
 
-		public void setPassengers(JavaEntityInstance[] passengers)
-		{
+		public void setPassengers(JavaEntityInstance[] passengers) {
 			HashSet<Integer> passengerIds = new HashSet<>();
-			for (JavaEntityInstance passenger : passengers)
-			{
+			for (JavaEntityInstance passenger : passengers) {
 				passengerIds.add(passenger.getInstanceId());
-				if (!this.passengers.containsKey(passenger.getInstanceId()))
-				{
+				if (!this.passengers.containsKey(passenger.getInstanceId())) {
 					this.addPassenger(passenger);
 				}
 			}
-			for (JavaEntityInstance passenger : this.passengers.values().toArray(JavaEntityInstance[]::new))
-			{
-				if (!passengerIds.contains(passenger.getInstanceId()))
-				{
+			for (JavaEntityInstance passenger : this.passengers.values().toArray(JavaEntityInstance[]::new)) {
+				if (!passengerIds.contains(passenger.getInstanceId())) {
 					this.removePassenger(passenger);
 				}
 			}
 		}
 
-		private void addPassenger(@NotNull JavaEntityInstance passenger)
-		{
+		private void addPassenger(@NotNull JavaEntityInstance passenger) {
 			int instanceId = passenger.getInstanceId();
-			if (this.passengers.containsKey(instanceId))
-			{
+			if (this.passengers.containsKey(instanceId)) {
 				throw new IllegalArgumentException();
 			}
 
-			if (passenger.mount != null)
-			{
+			if (passenger.mount != null) {
 				passenger.mount.removePassenger(passenger);
 			}
 
@@ -349,21 +311,17 @@ public class EntityManager
 			passenger.onMounted(this);
 		}
 
-		protected void removePassenger(@NotNull JavaEntityInstance passenger)
-		{
+		protected void removePassenger(@NotNull JavaEntityInstance passenger) {
 			int instanceId = passenger.getInstanceId();
-			if (!this.passengers.containsKey(instanceId))
-			{
+			if (!this.passengers.containsKey(instanceId)) {
 				throw new IllegalArgumentException();
 			}
 
-			if (passenger.mount != this)
-			{
+			if (passenger.mount != this) {
 				throw new AssertionError();
 			}
 
-			if (this.passengers.remove(instanceId) != passenger)
-			{
+			if (this.passengers.remove(instanceId) != passenger) {
 				throw new AssertionError();
 			}
 			passenger.mount = null;
@@ -371,93 +329,76 @@ public class EntityManager
 			this.onPassengerRemoved(passenger);
 		}
 
-		protected void onAdded()
-		{
+		protected void onAdded() {
 			// empty
 		}
 
-		protected void onRemoved()
-		{
+		protected void onRemoved() {
 			// empty
 		}
 
-		protected void onPositionChanged()
-		{
+		protected void onPositionChanged() {
 			// empty
 		}
 
-		protected void onVelocityChanged()
-		{
+		protected void onVelocityChanged() {
 			// empty
 		}
 
-		protected void onHeadYawChanged()
-		{
+		protected void onHeadYawChanged() {
 			// empty
 		}
 
-		protected void onEquipmentChanged()
-		{
+		protected void onEquipmentChanged() {
 			// empty
 		}
 
-		protected void onMetadataFieldChanged(@NotNull EntityMetadata<?, ? extends MetadataType<?>> metadata)
-		{
+		protected void onMetadataFieldChanged(@NotNull EntityMetadata<?, ? extends MetadataType<?>> metadata) {
 			// empty
 		}
 
-		protected void afterMetadataBatchChange()
-		{
+		protected void afterMetadataBatchChange() {
 			// empty
 		}
 
-		protected void onAttributeChanged(@NotNull Attribute attributes)
-		{
+		protected void onAttributeChanged(@NotNull Attribute attributes) {
 			// empty
 		}
 
-		protected void afterAttributeBatchChange()
-		{
+		protected void afterAttributeBatchChange() {
 			// empty
 		}
 
-		protected void onHurt()
-		{
+		protected void onHurt() {
 			// empty
 		}
 
-		protected void onPassengerAdded(@NotNull JavaEntityInstance passenger)
-		{
+		protected void onPassengerAdded(@NotNull JavaEntityInstance passenger) {
 			// empty
 		}
 
-		protected void onPassengerRemoved(@NotNull JavaEntityInstance passenger)
-		{
+		protected void onPassengerRemoved(@NotNull JavaEntityInstance passenger) {
 			// empty
 		}
 
-		protected void onMounted(@NotNull JavaEntityInstance mount)
-		{
+		protected void onMounted(@NotNull JavaEntityInstance mount) {
 			// empty
 		}
 
-		protected void onUnmounted(@NotNull JavaEntityInstance mount)
-		{
+		protected void onUnmounted(@NotNull JavaEntityInstance mount) {
 			// empty
 		}
 
-		public boolean handleEvent(@NotNull EntityEvent entityEvent)
-		{
+		public boolean handleEvent(@NotNull EntityEvent entityEvent) {
 			return false;
 		}
 
-		public boolean handleAnimation(@NotNull Animation animation)
-		{
+		public boolean handleAnimation(@NotNull Animation animation) {
 			return false;
 		}
 
-		public final void setInitialPosition(@NotNull Vector3f pos, @NotNull Vector3f velocity, boolean onGround, float yaw, float pitch, float headYaw)
-		{
+		public final void setInitialPosition(@NotNull Vector3f pos, @NotNull Vector3f velocity, boolean onGround,
+				float yaw, float pitch, float headYaw) {
 			this.pos = pos;
 			this.velocity = velocity;
 			this.onGround = onGround;
@@ -467,122 +408,107 @@ public class EntityManager
 		}
 
 		@NotNull
-		public final Vector3f getPos()
-		{
+		public final Vector3f getPos() {
 			return this.pos;
 		}
 
 		@NotNull
-		public final Vector3f getVelocity()
-		{
+		public final Vector3f getVelocity() {
 			return this.velocity;
 		}
 
-		public final boolean getOnGround()
-		{
+		public final boolean getOnGround() {
 			return this.onGround;
 		}
 
-		public final float getYaw()
-		{
+		public final float getYaw() {
 			return this.yaw;
 		}
 
-		public final float getPitch()
-		{
+		public final float getPitch() {
 			return this.pitch;
 		}
 
-		public final float getHeadYaw()
-		{
+		public final float getHeadYaw() {
 			return this.headYaw;
 		}
 
 		@NotNull
-		public final ItemData getHandMain()
-		{
+		public final ItemData getHandMain() {
 			return this.handMain;
 		}
 
 		@NotNull
-		public final ItemData getHandSecondary()
-		{
+		public final ItemData getHandSecondary() {
 			return this.handSecondary;
 		}
 
 		@NotNull
-		public final ItemData getArmorHead()
-		{
+		public final ItemData getArmorHead() {
 			return this.armorHead;
 		}
 
 		@NotNull
-		public final ItemData getArmorChest()
-		{
+		public final ItemData getArmorChest() {
 			return this.armorChest;
 		}
 
 		@NotNull
-		public final ItemData getArmorLegs()
-		{
+		public final ItemData getArmorLegs() {
 			return this.armorLegs;
 		}
 
 		@NotNull
-		public final ItemData getArmorFeet()
-		{
+		public final ItemData getArmorFeet() {
 			return this.armorFeet;
 		}
 
-		protected final void sendAttack()
-		{
-			ServerboundInteractPacket serverboundInteractPacket = new ServerboundInteractPacket(this.instanceId, InteractAction.ATTACK, Hand.MAIN_HAND, false);
+		protected final void sendAttack() {
+			ServerboundInteractPacket serverboundInteractPacket = new ServerboundInteractPacket(this.instanceId,
+					InteractAction.ATTACK, Hand.MAIN_HAND, false);
 			this.sendJavaPacket(serverboundInteractPacket);
 		}
 
-		protected final void sendInteract()
-		{
-			ServerboundInteractPacket serverboundInteractPacket = new ServerboundInteractPacket(this.instanceId, InteractAction.INTERACT, Hand.MAIN_HAND, false);
+		protected final void sendInteract() {
+			ServerboundInteractPacket serverboundInteractPacket = new ServerboundInteractPacket(this.instanceId,
+					InteractAction.INTERACT, Hand.MAIN_HAND, false);
 			this.sendJavaPacket(serverboundInteractPacket);
 		}
 
-		protected final void addBedrockEntity(@NotNull String identifier, @NotNull BedrockEntityInstance bedrockEntityInstance)
-		{
+		protected final void addBedrockEntity(@NotNull String identifier,
+				@NotNull BedrockEntityInstance bedrockEntityInstance) {
 			this.requireEntityManager().addBedrockEntity(identifier, bedrockEntityInstance);
 		}
 
-		protected final void addBedrockItemEntity(@NotNull BedrockEntityInstance bedrockEntityInstance, @NotNull ItemData item)
-		{
+		protected final void addBedrockItemEntity(@NotNull BedrockEntityInstance bedrockEntityInstance,
+				@NotNull ItemData item) {
 			this.requireEntityManager().addBedrockItemEntity(bedrockEntityInstance, item);
 		}
 
-		protected final void sendJavaPacket(@NotNull MinecraftPacket packet)
-		{
+		protected final void sendJavaPacket(@NotNull MinecraftPacket packet) {
 			this.requireEntityManager().playerSession.sendJavaPacket(packet);
 		}
 
-		protected final void sendBedrockPacket(@NotNull BedrockPacket packet)
-		{
+		protected final void sendBedrockPacket(@NotNull BedrockPacket packet) {
 			this.requireEntityManager().playerSession.sendBedrockPacket(packet);
 		}
 
 		@NotNull
-		private EntityManager requireEntityManager()
-		{
-			if (this.entityManager == null)
-			{
+		private EntityManager requireEntityManager() {
+			if (this.entityManager == null) {
 				throw new IllegalStateException();
 			}
 			return this.entityManager;
 		}
 
-		protected static <V, T extends MetadataType<V>> boolean getMetadataField(@NotNull EntityMetadata<?, ?> metadata, int metadataId, @NotNull T targetType, @NotNull Consumer<V> consumer)
-		{
-			if (metadata.getId() == metadataId)
-			{
-				if (metadata.getType() != targetType)
-				{
-					LogManager.getLogger().warn("Server sent bad entity metadata (ID {} of type {} did not match expected type {})", metadataId, metadata.getType(), targetType);
+		@SuppressWarnings("unchecked")
+		protected static <V, T extends MetadataType<V>> boolean getMetadataField(@NotNull EntityMetadata<?, ?> metadata,
+				int metadataId, @NotNull T targetType, @NotNull Consumer<V> consumer) {
+			if (metadata.getId() == metadataId) {
+				if (metadata.getType() != targetType) {
+					LogManager.getLogger().warn(
+							"Server sent bad entity metadata (ID {} of type {} did not match expected type {})",
+							metadataId, metadata.getType(), targetType);
 					return false;
 				}
 				consumer.accept((V) metadata.getValue());
@@ -591,41 +517,33 @@ public class EntityManager
 			return false;
 		}
 
-		protected static double getAttributeValueWithModifiers(@NotNull Attribute attribute)
-		{
+		protected static double getAttributeValueWithModifiers(@NotNull Attribute attribute) {
 			double value = attribute.getValue();
-			for (AttributeModifier modifier : attribute.getModifiers())
-			{
-				if (modifier.getOperation() == ModifierOperation.ADD)
-				{
+			for (AttributeModifier modifier : attribute.getModifiers()) {
+				if (modifier.getOperation() == ModifierOperation.ADD) {
 					value += modifier.getAmount();
 				}
 			}
 			double base = value;
-			for (AttributeModifier modifier : attribute.getModifiers())
-			{
-				if (modifier.getOperation() == ModifierOperation.ADD_MULTIPLIED)
-				{
+			for (AttributeModifier modifier : attribute.getModifiers()) {
+				if (modifier.getOperation() == ModifierOperation.ADD_MULTIPLIED_BASE) {
 					value += base * modifier.getAmount();
 				}
 			}
-			for (AttributeModifier modifier : attribute.getModifiers())
-			{
-				if (modifier.getOperation() == ModifierOperation.MULTIPLY)
-				{
+			for (AttributeModifier modifier : attribute.getModifiers()) {
+				if (modifier.getOperation() == ModifierOperation.ADD_MULTIPLIED_TOTAL) {
 					value += value * modifier.getAmount();
 				}
 			}
-			if (attribute.getType() instanceof AttributeType.Builtin)
-			{
-				value = Math.min(Math.max(value, ((AttributeType.Builtin) attribute.getType()).getMin()), ((AttributeType.Builtin) attribute.getType()).getMax());
+			if (attribute.getType() instanceof AttributeType.Builtin) {
+				value = Math.min(Math.max(value, ((AttributeType.Builtin) attribute.getType()).getMin()),
+						((AttributeType.Builtin) attribute.getType()).getMax());
 			}
 			return value;
 		}
 	}
 
-	public static class BedrockEntityInstance
-	{
+	public static class BedrockEntityInstance {
 		private EntityManager entityManager = null;
 		private long instanceId;
 
@@ -644,178 +562,146 @@ public class EntityManager
 		private ItemData armorLegs = ItemData.AIR;
 		private ItemData armorFeet = ItemData.AIR;
 
-		public BedrockEntityInstance()
-		{
+		public BedrockEntityInstance() {
 			// empty
 		}
 
-		public final long getInstanceId()
-		{
+		public final long getInstanceId() {
 			this.requireEntityManager();
 			return this.instanceId;
 		}
 
-		public final void remove()
-		{
+		public final void remove() {
 			this.requireEntityManager().removeBedrockEntity(this);
 		}
 
-		public void onAttack()
-		{
+		public void onAttack() {
 			// empty
 		}
 
-		public void onInteract()
-		{
+		public void onInteract() {
 			// empty
 		}
 
-		protected void getEntityData(@NotNull Map<EntityDataType<?>, ?> entityData)
-		{
+		protected void getEntityData(@NotNull Map<EntityDataType<?>, ?> entityData) {
 			// empty
 		}
 
-		protected void getEntityFlags(@NotNull Set<EntityFlag> entityFlags)
-		{
+		protected void getEntityFlags(@NotNull Set<EntityFlag> entityFlags) {
 			// empty
 		}
 
-		protected void getEntityAttributes(@NotNull LinkedList<AttributeData> entityAttributes)
-		{
+		protected void getEntityAttributes(@NotNull LinkedList<AttributeData> entityAttributes) {
 			// empty
 		}
 
 		@NotNull
-		public final Vector3f getPos()
-		{
+		public final Vector3f getPos() {
 			return this.pos;
 		}
 
-		public final void setPos(@NotNull Vector3f pos)
-		{
+		public final void setPos(@NotNull Vector3f pos) {
 			this.pos = pos;
 		}
 
 		@NotNull
-		public final Vector3f getVelocity()
-		{
+		public final Vector3f getVelocity() {
 			return this.velocity;
 		}
 
-		public final void setVelocity(@NotNull Vector3f velocity)
-		{
+		public final void setVelocity(@NotNull Vector3f velocity) {
 			this.velocity = velocity;
 		}
 
-		public final boolean getOnGround()
-		{
+		public final boolean getOnGround() {
 			return this.onGround;
 		}
 
-		public final void setOnGround(boolean onGround)
-		{
+		public final void setOnGround(boolean onGround) {
 			this.onGround = onGround;
 		}
 
-		public final float getYaw()
-		{
+		public final float getYaw() {
 			return this.yaw;
 		}
 
-		public final void setYaw(float yaw)
-		{
+		public final void setYaw(float yaw) {
 			this.yaw = yaw;
 		}
 
-		public final float getPitch()
-		{
+		public final float getPitch() {
 			return this.pitch;
 		}
 
-		public final void setPitch(float pitch)
-		{
+		public final void setPitch(float pitch) {
 			this.pitch = pitch;
 		}
 
-		public final float getHeadYaw()
-		{
+		public final float getHeadYaw() {
 			return this.headYaw;
 		}
 
-		public final void setHeadYaw(float headYaw)
-		{
+		public final void setHeadYaw(float headYaw) {
 			this.headYaw = headYaw;
 		}
 
 		@NotNull
-		public final ItemData getHandMain()
-		{
+		public final ItemData getHandMain() {
 			return this.handMain;
 		}
 
-		public final void setHandMain(@NotNull ItemData handMain)
-		{
+		public final void setHandMain(@NotNull ItemData handMain) {
 			this.handMain = handMain;
 		}
 
 		@NotNull
-		public final ItemData getHandSecondary()
-		{
+		public final ItemData getHandSecondary() {
 			return this.handSecondary;
 		}
 
-		public final void setHandSecondary(@NotNull ItemData handSecondary)
-		{
+		public final void setHandSecondary(@NotNull ItemData handSecondary) {
 			this.handSecondary = handSecondary;
 		}
 
 		@NotNull
-		public final ItemData getArmorHead()
-		{
+		public final ItemData getArmorHead() {
 			return this.armorHead;
 		}
 
-		public final void setArmorHead(@NotNull ItemData armorHead)
-		{
+		public final void setArmorHead(@NotNull ItemData armorHead) {
 			this.armorHead = armorHead;
 		}
 
 		@NotNull
-		public final ItemData getArmorChest()
-		{
+		public final ItemData getArmorChest() {
 			return this.armorChest;
 		}
 
-		public final void setArmorChest(@NotNull ItemData armorChest)
-		{
+		public final void setArmorChest(@NotNull ItemData armorChest) {
 			this.armorChest = armorChest;
 		}
 
 		@NotNull
-		public final ItemData getArmorLegs()
-		{
+		public final ItemData getArmorLegs() {
 			return this.armorLegs;
 		}
 
-		public final void setArmorLegs(@NotNull ItemData armorLegs)
-		{
+		public final void setArmorLegs(@NotNull ItemData armorLegs) {
 			this.armorLegs = armorLegs;
 		}
 
 		@NotNull
-		public final ItemData getArmorFeet()
-		{
+		public final ItemData getArmorFeet() {
 			return this.armorFeet;
 		}
 
-		public final void setArmorFeet(@NotNull ItemData armorFeet)
-		{
+		public final void setArmorFeet(@NotNull ItemData armorFeet) {
 			this.armorFeet = armorFeet;
 		}
 
-		public final void sendPosition()
-		{
-			// TODO: does it matter if we use relative or absolute packets e.g. regarding client-side interpolation?
+		public final void sendPosition() {
+			// TODO: does it matter if we use relative or absolute packets e.g. regarding
+			// client-side interpolation?
 			MoveEntityAbsolutePacket moveEntityAbsolutePacket = new MoveEntityAbsolutePacket();
 			moveEntityAbsolutePacket.setRuntimeEntityId(this.instanceId);
 			moveEntityAbsolutePacket.setPosition(this.pos);
@@ -826,16 +712,14 @@ public class EntityManager
 			this.sendBedrockPacket(moveEntityAbsolutePacket);
 		}
 
-		public final void sendVelocity()
-		{
+		public final void sendVelocity() {
 			SetEntityMotionPacket setEntityMotionPacket = new SetEntityMotionPacket();
 			setEntityMotionPacket.setRuntimeEntityId(this.instanceId);
 			setEntityMotionPacket.setMotion(this.velocity);
 			this.sendBedrockPacket(setEntityMotionPacket);
 		}
 
-		public final void sendHeadYaw()
-		{
+		public final void sendHeadYaw() {
 			MoveEntityDeltaPacket moveEntityDeltaPacket = new MoveEntityDeltaPacket();
 			moveEntityDeltaPacket.setRuntimeEntityId(this.instanceId);
 			moveEntityDeltaPacket.setHeadYaw(this.headYaw);
@@ -843,8 +727,7 @@ public class EntityManager
 			this.sendBedrockPacket(moveEntityDeltaPacket);
 		}
 
-		public final void sendData()
-		{
+		public final void sendData() {
 			SetEntityDataPacket setEntityDataPacket = new SetEntityDataPacket();
 			setEntityDataPacket.setRuntimeEntityId(this.instanceId);
 			HashMap<EntityDataType<?>, ?> bedrockEntityData = new HashMap<>();
@@ -863,8 +746,7 @@ public class EntityManager
 			this.sendBedrockPacket(updateAttributesPacket);
 		}
 
-		public final void sendEquipment()
-		{
+		public final void sendEquipment() {
 			MobEquipmentPacket mobEquipmentPacket = new MobEquipmentPacket();
 			mobEquipmentPacket.setRuntimeEntityId(this.instanceId);
 			mobEquipmentPacket.setItem(this.handMain);
@@ -884,16 +766,14 @@ public class EntityManager
 			this.sendBedrockPacket(mobArmorEquipmentPacket);
 		}
 
-		public final void sendEvent(@NotNull EntityEventType entityEventType)
-		{
+		public final void sendEvent(@NotNull EntityEventType entityEventType) {
 			EntityEventPacket entityEventPacket = new EntityEventPacket();
 			entityEventPacket.setRuntimeEntityId(this.instanceId);
 			entityEventPacket.setType(entityEventType);
 			this.sendBedrockPacket(entityEventPacket);
 		}
 
-		public final void sendEvent(@NotNull EntityEventType entityEventType, int data)
-		{
+		public final void sendEvent(@NotNull EntityEventType entityEventType, int data) {
 			EntityEventPacket entityEventPacket = new EntityEventPacket();
 			entityEventPacket.setRuntimeEntityId(this.instanceId);
 			entityEventPacket.setType(entityEventType);
@@ -901,36 +781,32 @@ public class EntityManager
 			this.sendBedrockPacket(entityEventPacket);
 		}
 
-		public final void sendAnimation(@NotNull AnimatePacket.Action action)
-		{
+		public final void sendAnimation(@NotNull AnimatePacket.Action action) {
 			AnimatePacket animatePacket = new AnimatePacket();
 			animatePacket.setRuntimeEntityId(this.instanceId);
 			animatePacket.setAction(action);
 			this.sendBedrockPacket(animatePacket);
 		}
 
-		protected final void sendJavaPacket(@NotNull MinecraftPacket packet)
-		{
+		protected final void sendJavaPacket(@NotNull MinecraftPacket packet) {
 			this.requireEntityManager().playerSession.sendJavaPacket(packet);
 		}
 
-		protected final void sendBedrockPacket(@NotNull BedrockPacket packet)
-		{
+		protected final void sendBedrockPacket(@NotNull BedrockPacket packet) {
 			this.requireEntityManager().playerSession.sendBedrockPacket(packet);
 		}
 
 		@NotNull
-		private EntityManager requireEntityManager()
-		{
-			if (this.entityManager == null)
-			{
+		private EntityManager requireEntityManager() {
+			if (this.entityManager == null) {
 				throw new IllegalStateException();
 			}
 			return this.entityManager;
 		}
 
-		protected static <T> void putEntityData(@NotNull Map<EntityDataType<?>, ?> entityData, @NotNull EntityDataType<T> entityDataType, T value)
-		{
+		@SuppressWarnings("unchecked")
+		protected static <T> void putEntityData(@NotNull Map<EntityDataType<?>, ?> entityData,
+				@NotNull EntityDataType<T> entityDataType, T value) {
 			((Map<EntityDataType<?>, Object>) entityData).put(entityDataType, value);
 		}
 	}

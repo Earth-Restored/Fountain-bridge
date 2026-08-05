@@ -1,10 +1,10 @@
 package micheal65536.fountain.utils;
 
-import com.github.steveice10.mc.protocol.data.game.level.event.BreakBlockEventData;
-import com.github.steveice10.mc.protocol.data.game.level.event.LevelEventData;
-import com.github.steveice10.mc.protocol.data.game.level.particle.Particle;
-import com.github.steveice10.mc.protocol.data.game.level.sound.BuiltinSound;
-import com.github.steveice10.mc.protocol.data.game.level.sound.Sound;
+import org.geysermc.mcprotocollib.protocol.data.game.level.event.BreakBlockEventData;
+import org.geysermc.mcprotocollib.protocol.data.game.level.event.LevelEventData;
+import org.geysermc.mcprotocollib.protocol.data.game.level.particle.Particle;
+import org.geysermc.mcprotocollib.protocol.data.game.level.sound.BuiltinSound;
+import org.geysermc.mcprotocollib.protocol.data.game.level.sound.Sound;
 import org.apache.logging.log4j.LogManager;
 import org.cloudburstmc.math.vector.Vector3f;
 import org.cloudburstmc.math.vector.Vector3i;
@@ -31,14 +31,14 @@ public class EffectManager
 		this.playerSession = playerSession;
 	}
 
-	public boolean handleLevelEvent(@NotNull Vector3i position, @NotNull com.github.steveice10.mc.protocol.data.game.level.event.LevelEvent event, @NotNull LevelEventData eventData)
+	public boolean handleLevelEvent(@NotNull Vector3i position, @NotNull org.geysermc.mcprotocollib.protocol.data.game.level.event.LevelEvent event, @NotNull LevelEventData eventData)
 	{
-		if (!(event instanceof com.github.steveice10.mc.protocol.data.game.level.event.LevelEventType))
+		if (!(event instanceof org.geysermc.mcprotocollib.protocol.data.game.level.event.LevelEventType))
 		{
 			return false;
 		}
 
-		switch ((com.github.steveice10.mc.protocol.data.game.level.event.LevelEventType) event)
+		switch ((org.geysermc.mcprotocollib.protocol.data.game.level.event.LevelEventType) event)
 		{
 			case BREAK_BLOCK ->
 			{

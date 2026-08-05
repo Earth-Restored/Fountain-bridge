@@ -1,8 +1,8 @@
 package micheal65536.fountain.utils;
 
-import com.github.steveice10.mc.protocol.codec.MinecraftCodecHelper;
-import com.github.steveice10.mc.protocol.data.game.entity.metadata.ItemStack;
-import com.github.steveice10.mc.protocol.packet.common.serverbound.ServerboundCustomPayloadPacket;
+import org.geysermc.mcprotocollib.protocol.codec.MinecraftCodecHelper;
+import org.geysermc.mcprotocollib.protocol.data.game.item.ItemStack;
+import org.geysermc.mcprotocollib.protocol.packet.common.serverbound.ServerboundCustomPayloadPacket;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import org.apache.logging.log4j.LogManager;
@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import micheal65536.fountain.PlayerSession;
 import micheal65536.fountain.connector.PlayerConnectorPluginWrapper;
+import net.kyori.adventure.key.Key;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -328,7 +329,7 @@ public class InventoryManager
 		byteBuf.writeBoolean(clearHotbar);
 		byte[] data = new byte[byteBuf.readableBytes()];
 		byteBuf.readBytes(data);
-		ServerboundCustomPayloadPacket serverboundCustomPayloadPacket = new ServerboundCustomPayloadPacket("fountain:inventory_sync_request", data);
+		ServerboundCustomPayloadPacket serverboundCustomPayloadPacket = new ServerboundCustomPayloadPacket(Key.key("fountain", "inventory_sync_request"), data);
 		this.playerSession.sendJavaPacket(serverboundCustomPayloadPacket);
 
 		this.inventorySyncRequestSent = true;
@@ -345,14 +346,14 @@ public class InventoryManager
 			{
 				this.minecraftCodecHelper.writeItemStack(byteBuf, this.genoaInventoryHelper.toItemStack(item));
 			}
-			catch (IOException exception)
+			catch (Exception exception)
 			{
 				throw new AssertionError(exception);
 			}
 		}
 		byte[] data = new byte[byteBuf.readableBytes()];
 		byteBuf.readBytes(data);
-		ServerboundCustomPayloadPacket serverboundCustomPayloadPacket = new ServerboundCustomPayloadPacket("fountain:set_hotbar_request", data);
+		ServerboundCustomPayloadPacket serverboundCustomPayloadPacket = new ServerboundCustomPayloadPacket(Key.key("fountain", "set_hotbar_request"), data);
 		this.playerSession.sendJavaPacket(serverboundCustomPayloadPacket);
 
 		this.sentServerHotbar = hotbar;
@@ -369,14 +370,14 @@ public class InventoryManager
 			{
 				this.minecraftCodecHelper.writeItemStack(byteBuf, this.genoaInventoryHelper.toItemStack(item));
 			}
-			catch (IOException exception)
+			catch (Exception exception)
 			{
 				throw new AssertionError(exception);
 			}
 		}
 		byte[] data = new byte[byteBuf.readableBytes()];
 		byteBuf.readBytes(data);
-		ServerboundCustomPayloadPacket serverboundCustomPayloadPacket = new ServerboundCustomPayloadPacket("fountain:set_hotbar_request", data);
+		ServerboundCustomPayloadPacket serverboundCustomPayloadPacket = new ServerboundCustomPayloadPacket(Key.key("fountain", "set_hotbar_request"), data);
 		this.playerSession.sendJavaPacket(serverboundCustomPayloadPacket);
 
 		this.currentServerHotbar = hotbar;

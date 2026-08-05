@@ -1,6 +1,6 @@
 package micheal65536.fountain.utils.entities;
 
-import com.github.steveice10.mc.protocol.data.game.entity.EntityEvent;
+import org.geysermc.mcprotocollib.protocol.data.game.entity.EntityEvent;
 import org.jetbrains.annotations.NotNull;
 
 public class RabbitJavaEntityInstance<T extends RabbitBedrockEntityInstance> extends AgeableJavaEntityInstance<T>
